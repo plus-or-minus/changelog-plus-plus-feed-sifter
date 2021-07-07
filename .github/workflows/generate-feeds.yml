@@ -1,0 +1,45 @@
+name: Generate feeds
+
+# MAKE SURE YOUR REPOSITORY IS PRIVATE BEFORE UNCOMMENTING!
+# on:
+#   schedule:
+#     - cron: '*/15 * * * *'
+#   push:
+#     branches:
+#       - main
+on:
+  push:
+    branches:
+      - never
+
+env:
+  CHANGELOG_PLUS_PLUS_FEED_URL: ${{ secrets.CHANGELOG_PLUS_PLUS_FEED_URL }}
+  GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+
+  GH_REPOSITORY_NAME: ${{ github.repository }}
+  GH_OUTPUT_BRANCH_NAME: generated
+  FEED_OUTPUT_DIR: feeds
+
+jobs:
+  generate-feeds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: false
+      - run: bundle
+
+      - name: Generate feeds
+        run: make run
+
+      - name: Commit feeds to the repository
+        uses: EndBug/add-and-commit@v7
+        with:
+          add: feeds --force
+          push: origin HEAD:generated --set-upstream --force
+          pull_strategy: NO-PULL
+          message: Update generated feeds
+          author_name: GitHub Action Podcast Generator
+          author_email: user@example.com
